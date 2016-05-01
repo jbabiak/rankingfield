@@ -1,0 +1,282 @@
+<?php
+/**
+ * @file
+ * An example field using the Field Types API.
+ */
+
+/**
+ * @defgroup ranking Example: Field Types API
+ * @ingroup examples
+ * @{
+ * Examples using Field Types API.
+ *
+ * This is updated from Barry Jaspan's presentation at Drupalcon Paris,
+ * @link http://acquia.com/community/resources/acquia-tv/intro-field-api-module-developers Video Presentation @endlink
+ *
+ * Providing a field requires:
+ * - Defining a field:
+ *   - hook_field_info()
+ *   - hook_field_schema()
+ *   - hook_field_validate()
+ *   - hook_field_is_empty()
+ *
+ * - Defining a formatter for the field (the portion that outputs the field for
+ *   display):
+ *   - hook_field_formatter_info()
+ *   - hook_field_formatter_view()
+ *
+ * - Defining a widget for the edit form:
+ *   - hook_field_widget_info()
+ *   - hook_field_widget_form()
+ *
+ * Our module defines the field in ranking_field_info(),
+ * ranking_field_validate() and ranking_field_is_empty().
+ * ranking_field_schema() is implemented in ranking.install.
+ *
+ * Our module sets up a formatter in ranking_field_formatter_info() and
+ * ranking_field_formatter_view(). These are the API hooks that present
+ * formatted and themed output to the user.
+ *
+ * And finally, our module defines the widget in
+ * ranking_field_widget_info() and ranking_field_widget_form().
+ * The widget is the form element used to receive input from the user
+ * when the field is being populated.
+ *
+ * @see field_types
+ * @see field
+ */
+
+/***************************************************************
+ * Field Type API hooks
+ ***************************************************************/
+
+/**
+ * Implements hook_field_info().
+ *
+ * Provides the description of the field.
+ */
+function ranking_field_info() {
+  return array(
+    // We name our field as the associative name of the array.
+    'ranking_field' => array(
+      'label' => t('Ranking Field'),
+      'description' => t('Create a table of select list and text to have users rank choices.'),
+      'default_widget' => 'ranking_text',
+      'default_formatter' => 'ranking_simple_text',
+    ),
+  );
+}
+
+/**
+ * Implements hook_field_validate().
+ *
+ * This hook gives us a chance to validate content that's in our
+ * field. We're really only interested in the $items parameter, since
+ * it holds arrays representing content in the field we've defined.
+ * We want to verify that the items only contain text hex values like
+ * this: #RRGGBB. If the item validates, we do nothing. If it doesn't
+ * validate, we add our own error notification to the $errors parameter.
+ *
+ * @see ranking_field_widget_error()
+ */
+function ranking_field_validate($entity_type, $entity, $field, $instance, $langcode, $items, &$errors) {
+  foreach ($items as $delta => $item) {
+    if (empty($item['text'])) {
+      $errors[$field['field_name']][$langcode][$delta][] = array(
+        'error' => 'ranking_invalid',
+        'message' => t('Color must be in the HTML format #abcdef.'),
+      );
+    }
+  }
+}
+
+
+/**
+ * Implements hook_field_is_empty().
+ *
+ * hook_field_is_emtpy() is where Drupal asks us if this field is empty.
+ * Return TRUE if it does not contain data, FALSE if it does. This lets
+ * the form API flag an error when required fields are empty.
+ */
+function ranking_field_is_empty($item, $field) {
+  dpm($item);
+  return empty($item['text']);
+}
+
+/**
+ * Implements hook_field_formatter_info().
+ *
+ * We need to tell Drupal that we have two different types of formatters
+ * for this field. One will change the text color, and the other will
+ * change the background color.
+ *
+ * @see ranking_field_formatter_view()
+ */
+function ranking_field_formatter_info() {
+  return array(
+    // This formatter just displays the hex value in the color indicated.
+    'ranking_simple_text' => array(
+      'label' => t('Simple text-based formatter'),
+      'field types' => array('ranking_field'),
+    ),
+  );
+}
+
+/**
+ * Implements hook_field_formatter_view().
+ *
+ * Two formatters are implemented.
+ * - ranking_simple_text just outputs markup indicating the color that
+ *   was entered and uses an inline style to set the text color to that value.
+ * - ranking_color_background does the same but also changes the
+ *   background color of div.region-content.
+ *
+ * @see ranking_field_formatter_info()
+ */
+function ranking_field_formatter_view($entity_type, $entity, $field, $instance, $langcode, $items, $display) {
+  $element = array();
+  $option_val = '<option value="volvo">Volvo</option>
+  <option value="saab">Saab</option>';
+  switch ($display['type']) {
+    // This formatter simply outputs the field as text and with a color.
+    case 'ranking_simple_text':
+      foreach ($items as $delta => $item) {
+        $element[$delta] = array(
+          // We create a render array to produce the desired markup,
+          // "<p style="color: #hexcolor">The color code ... #hexcolor</p>".
+          // See theme_html_tag().
+          '#type' => 'html_tag',
+          '#tag' => 'ul',
+          '#attributes' => array(
+            'style' => 'color: ' . $item['text'],
+          ),
+          '#value' => t('<select class="ranking-select"><option value="volvo">Volvo</option>
+  <option value="saab">Saab</option></select> choice = @code', array('@delta' => $delta, '@code' => $item['text'], '@option_val' => $option_val)),
+          '#attached' => array(
+            'css' => array(drupal_get_path('module', 'ranking') . '/ranking.css'),
+          ),
+          );
+      }
+      break;
+  }
+
+  return $element;
+}
+
+/**
+ * Implements hook_field_widget_info().
+ *
+ * Three widgets are provided.
+ * - A simple text-only widget where the user enters the '#ffffff'.
+ * - A 3-textfield widget that gathers the red, green, and blue values
+ *   separately.
+ * - A farbtastic colorpicker widget that chooses the value graphically.
+ *
+ * These widget types will eventually show up in hook_field_widget_form,
+ * where we will have to flesh them out.
+ *
+ * @see ranking_field_widget_form()
+ */
+function ranking_field_widget_info() {
+  return array(
+    'ranking_text' => array(
+      'label' => t('Select List'),
+      'field types' => array('ranking_field'),
+    ),
+  );
+}
+
+/**
+ * Implements hook_field_widget_form().
+ *
+ * hook_widget_form() is where Drupal tells us to create form elements for
+ * our field's widget.
+ *
+ * We provide one of three different forms, depending on the widget type of
+ * the Form API item provided.
+ *
+ * The 'ranking_colorpicker' and 'ranking_text' are essentially
+ * the same, but ranking_colorpicker adds a javascript colorpicker
+ * helper.
+ *
+ * ranking_3text displays three text fields, one each for red, green,
+ * and blue. However, the field type defines a single text column,
+ * text, which needs an HTML color spec. Define an element validate
+ * handler that converts our r, g, and b fields into a simulated single
+ * 'text' form element.
+ */
+function field_example_field_widget_form(&$form, &$form_state, $field, $instance, $langcode, $items, $delta, $element) {
+  $value = isset($items[$delta]['text']) ? $items[$delta]['text'] : '';
+
+  $widget = $element;
+  $widget['#delta'] = $delta;
+
+  switch ($instance['widget']['type']) {
+
+    // DELIBERATE fall-through: From here on the field_example_text and
+    // field_example_colorpicker are exactly the same.
+    case 'field_example_text':
+      $widget += array(
+        '#type' => 'textfield',
+        '#default_value' => $value,
+        // Allow a slightly larger size that the field length to allow for some
+        // configurations where all characters won't fit in input field.
+        '#size' => 7,
+        '#maxlength' => 7,
+      );
+      break;
+
+
+
+  }
+
+  $element['text'] = $widget;
+  return $element;
+}
+
+
+
+
+
+/**
+ * Implements hook_field_widget_error().
+ *
+ * hook_field_widget_error() lets us figure out what to do with errors
+ * we might have generated in hook_field_validate(). Generally, we'll just
+ * call form_error().
+ *
+ * @see ranking_field_validate()
+ * @see form_error()
+ */
+function ranking_field_widget_error($element, $error, $form, &$form_state) {
+  switch ($error['error']) {
+    case 'ranking_invalid':
+      form_error($element, $error['message']);
+      break;
+  }
+}
+
+
+/**
+ * Implements hook_menu().
+ *
+ * Provides a simple user interface that tells the developer where to go.
+ */
+function ranking_menu() {
+  $items['examples/ranking'] = array(
+    'title' => 'Field Example',
+    'page callback' => '_ranking_page',
+    'access callback' => TRUE,
+  );
+  return $items;
+}
+
+/**
+ * A simple page to explain to the developer what to do.
+ */
+function _ranking_page() {
+  return t("The Field Example provides a field composed of an HTML text value, like #ff00ff. To use it, add the field to a content type.");
+}
+/**
+ * @} End of "defgroup ranking".
+ */
