@@ -6,3 +6,7 @@
 .field-multiple-drag {
   display: none;
 }
+
+.field-type-ranking-list .form-select {
+  width: 75px;
+}

@@ -148,10 +148,18 @@ function ranking_field_widget_info() {
  */
 function ranking_field_widget_form(&$form, &$form_state, $field, $instance, $langcode, $items, $delta, $element) {
   $value = isset($items[$delta]['selection']) ? $items[$delta]['selection'] : '';
-  for ($i = 1; $i <= $field['cardinality']; $i++) {
-    $options[$i] = $i;
-  }
 
+  if (!isset($instance['settings'][$delta]['list_option'])) {
+    $instance['settings'][$delta]['list_option'] = '';
+  }
+  $options[0] = 'Select';
+  for ($i = 1; $i <= $field['cardinality']; $i++) {
+
+
+      $options[$i] = $i;
+
+  }
+  dpm($options);
   $widget = $element;
   $widget['#attached'] = array(
       'css' => array(
@@ -161,10 +169,19 @@ function ranking_field_widget_form(&$form, &$form_state, $field, $instance, $lan
   $widget += array(
     '#type' => 'select',
     '#options' => $options,
+
     '#default_value' => ($delta+1),
-    '#suffix' => $instance['settings'][$delta]['list_option'],
+    '#prefix' => $instance['settings'][$delta]['list_option']
   );
+
   $element['selection'] = $widget;
+  $form = array(
+    '#attached' => array(
+      // Add javascript
+      'js' => array(drupal_get_path('module', 'ranking') . '/ranking.js'),
+      'class' => 'rank-select',
+    ),
+  );
   return $element;
 }
 
@@ -176,10 +193,10 @@ function ranking_field_instance_settings_form($field, $instance) {
       $settings[$i]['list_option'] = 'Enter text to be displayed here';
     }
     $form[$i]['list_option'] = array(
-      '#type' => 'textfield',
-      '#title' => t('List Option ' . $i),
+      '#type' => 'textarea',
+      '#title' => t('List Option ' . ($i + 1)),
       '#default_value' => $settings[$i]['list_option'],
-      '#description' => t('The minimum value that should be allowed in this field. Leave blank for no minimum.'),
+      '#description' => t('The option and description that users will see.'),
     );
   }
   return $form;
