@@ -154,10 +154,7 @@ function ranking_field_widget_form(&$form, &$form_state, $field, $instance, $lan
   }
   $options[0] = 'Select';
   for ($i = 1; $i <= $field['cardinality']; $i++) {
-
-
       $options[$i] = $i;
-
   }
   dpm($options);
   $widget = $element;
@@ -169,7 +166,7 @@ function ranking_field_widget_form(&$form, &$form_state, $field, $instance, $lan
   $widget += array(
     '#type' => 'select',
     '#options' => $options,
-
+    '#name' => 'rank-select',
     '#default_value' => ($delta+1),
     '#prefix' => $instance['settings'][$delta]['list_option']
   );
@@ -179,7 +176,6 @@ function ranking_field_widget_form(&$form, &$form_state, $field, $instance, $lan
     '#attached' => array(
       // Add javascript
       'js' => array(drupal_get_path('module', 'ranking') . '/ranking.js'),
-      'class' => 'rank-select',
     ),
   );
   return $element;
