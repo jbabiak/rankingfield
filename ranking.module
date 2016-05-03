@@ -167,7 +167,7 @@ function ranking_field_widget_form(&$form, &$form_state, $field, $instance, $lan
     '#type' => 'select',
     '#options' => $options,
     '#name' => 'rank-select',
-    '#default_value' => ($delta+1),
+    '#default_value' => 0,
     '#prefix' => $instance['settings'][$delta]['list_option']
   );
 
