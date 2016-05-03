@@ -23,10 +23,12 @@
  */
 function ranking_field_schema($field) {
   $columns = array(
-    'text' => array('type' => 'varchar', 'length' => 255, 'not null' => FALSE),
+    'rank' => array('type' => 'varchar', 'length' => 7, 'not null' => FALSE),
+    'list' => array('type' => 'varchar', 'length' => 7, 'not null' => FALSE),
   );
   $indexes = array(
-    'text' => array('text'),
+    'rank' => array('rank'),
+    'list' => array('list'),
   );
   return array(
     'columns' => $columns,

@@ -2,22 +2,7 @@
  * @file
  * CSS for Field Example.
  */
-.field-type-ranking-field {
-display:block;
-  background: blue;
-
-}
-
-.field-item {
-display:block;
-  background: blue;
-
-}
-.ranking-select {
-  display: inline-block;
-  background: blue;
-}
 
 .field-multiple-drag {
-  display:none !important;
+  display: none;
 }

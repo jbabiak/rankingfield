@@ -58,9 +58,10 @@
 function ranking_field_info() {
   return array(
     // We name our field as the associative name of the array.
-    'ranking_field' => array(
-      'label' => t('Ranking Field'),
-      'description' => t('Create a table of select list and text to have users rank choices.'),
+    'ranking_list' => array(
+      'label' => t('Ranking'),
+      'description' => t('Demonstrates a field composed of an list color.'),
+      'instance_settings' => array('list_option' => ''),
       'default_widget' => 'ranking_text',
       'default_formatter' => 'ranking_simple_text',
     ),
@@ -73,7 +74,7 @@ function ranking_field_info() {
  * This hook gives us a chance to validate content that's in our
  * field. We're really only interested in the $items parameter, since
  * it holds arrays representing content in the field we've defined.
- * We want to verify that the items only contain text hex values like
+ * We want to verify that the items only contain list hex values like
  * this: #RRGGBB. If the item validates, we do nothing. If it doesn't
  * validate, we add our own error notification to the $errors parameter.
  *
@@ -81,12 +82,7 @@ function ranking_field_info() {
  */
 function ranking_field_validate($entity_type, $entity, $field, $instance, $langcode, $items, &$errors) {
   foreach ($items as $delta => $item) {
-    if (empty($item['text'])) {
-      $errors[$field['field_name']][$langcode][$delta][] = array(
-        'error' => 'ranking_invalid',
-        'message' => t('Color must be in the HTML format #abcdef.'),
-      );
-    }
+
   }
 }
 
@@ -99,8 +95,7 @@ function ranking_field_validate($entity_type, $entity, $field, $instance, $langc
  * the form API flag an error when required fields are empty.
  */
 function ranking_field_is_empty($item, $field) {
-  dpm($item);
-  return empty($item['text']);
+  return empty($item['list']);
 }
 
 /**
@@ -117,8 +112,9 @@ function ranking_field_formatter_info() {
     // This formatter just displays the hex value in the color indicated.
     'ranking_simple_text' => array(
       'label' => t('Simple text-based formatter'),
-      'field types' => array('ranking_field'),
+      'field types' => array('ranking_list'),
     ),
+    // This formatter changes the background color of the content region.
   );
 }
 
@@ -133,31 +129,26 @@ function ranking_field_formatter_info() {
  *
  * @see ranking_field_formatter_info()
  */
+//submission view
 function ranking_field_formatter_view($entity_type, $entity, $field, $instance, $langcode, $items, $display) {
   $element = array();
-  $option_val = '<option value="volvo">Volvo</option>
-  <option value="saab">Saab</option>';
-  switch ($display['type']) {
-    // This formatter simply outputs the field as text and with a color.
-    case 'ranking_simple_text':
-      foreach ($items as $delta => $item) {
-        $element[$delta] = array(
-          // We create a render array to produce the desired markup,
-          // "<p style="color: #hexcolor">The color code ... #hexcolor</p>".
-          // See theme_html_tag().
-          '#type' => 'html_tag',
-          '#tag' => 'ul',
-          '#attributes' => array(
-            'style' => 'color: ' . $item['text'],
-          ),
-          '#value' => t('<select class="ranking-select"><option value="volvo">Volvo</option>
-  <option value="saab">Saab</option></select> choice = @code', array('@delta' => $delta, '@code' => $item['text'], '@option_val' => $option_val)),
-          '#attached' => array(
-            'css' => array(drupal_get_path('module', 'ranking') . '/ranking.css'),
-          ),
-          );
-      }
-      break;
+  $i = 0;
+  foreach ($items as $delta => $item) {
+    dpm($item);
+    dpm($instance, 'element');
+    dpm($field, 'field');
+    $element[$delta] = array(
+      // We create a render array to produce the desired markup,
+      // "<p style="color: #hexcolor">The color code ... #hexcolor</p>".
+      // See theme_html_tag().
+      '#type' => 'html_tag',
+      '#tag' => 'p',
+      '#attributes' => array(
+        'style' => 'color: blue;',
+      ),
+      '#value' => t('Choice # @rank is @list', array('@rank' => $instance['settings'][$i]['list_option'], '@list' => $item['list'])),
+    );
+    $i++;
   }
 
   return $element;
@@ -177,11 +168,12 @@ function ranking_field_formatter_view($entity_type, $entity, $field, $instance, 
  *
  * @see ranking_field_widget_form()
  */
+//widget select
 function ranking_field_widget_info() {
   return array(
     'ranking_text' => array(
-      'label' => t('Select List'),
-      'field types' => array('ranking_field'),
+      'label' => t('list value as #ffffff'),
+      'field types' => array('ranking_list'),
     ),
   );
 }
@@ -201,42 +193,54 @@ function ranking_field_widget_info() {
  *
  * ranking_3text displays three text fields, one each for red, green,
  * and blue. However, the field type defines a single text column,
- * text, which needs an HTML color spec. Define an element validate
+ * list, which needs an HTML color spec. Define an element validate
  * handler that converts our r, g, and b fields into a simulated single
- * 'text' form element.
+ * 'list' form element.
  */
-function field_example_field_widget_form(&$form, &$form_state, $field, $instance, $langcode, $items, $delta, $element) {
-  $value = isset($items[$delta]['text']) ? $items[$delta]['text'] : '';
-
+function ranking_field_widget_form(&$form, &$form_state, $field, $instance, $langcode, $items, $delta, $element) {
+  $value = isset($items[$delta]['list']) ? $items[$delta]['list'] : '';
+  $option_delta = $delta + 1;
+  $options = array(
+    1 => "First",
+    2 => "Second",
+    3 => "Third",
+  );
   $widget = $element;
-  $widget['#delta'] = $delta;
+  //$widget['#delta'] = ($delta+1);
+  $widget['#attached'] = array(
+      'css' => array(
+        drupal_get_path('module', 'ranking') . '/ranking.css'),
+           );
 
-  switch ($instance['widget']['type']) {
+  dpm($widget);
+  $widget += array(
+    '#type' => 'textfield',
+    //'#options' => $options,
+    // Allow a slightly larger size that the field length to allow for some
+    // configurations where all characters won't fit in input field.
+    '#default_value' => $value,
+    '#suffix' => $instance['settings'][$delta]['list_option'],
+  );
 
-    // DELIBERATE fall-through: From here on the field_example_text and
-    // field_example_colorpicker are exactly the same.
-    case 'field_example_text':
-      $widget += array(
-        '#type' => 'textfield',
-        '#default_value' => $value,
-        // Allow a slightly larger size that the field length to allow for some
-        // configurations where all characters won't fit in input field.
-        '#size' => 7,
-        '#maxlength' => 7,
-      );
-      break;
-
-
-
-  }
-
-  $element['text'] = $widget;
+  //dpm($options[$delta], 'option');
+  $element['list'] = $widget;
   return $element;
 }
 
-
-
-
+function ranking_field_instance_settings_form($field, $instance) {
+  $settings = $instance['settings'];
+  dpm($instance);
+  dpm($field);
+  for ($i = 0; $i < $field['cardinality']; $i++) {
+    $form[$i]['list_option'] = array(
+      '#type' => 'textfield',
+      '#title' => t('List Option ' . $i),
+      '#default_value' => $settings[$i]['list_option'],
+      '#description' => t('The minimum value that should be allowed in this field. Leave blank for no minimum.'),
+    );
+  }
+  return $form;
+}
 
 /**
  * Implements hook_field_widget_error().
@@ -263,8 +267,8 @@ function ranking_field_widget_error($element, $error, $form, &$form_state) {
  * Provides a simple user interface that tells the developer where to go.
  */
 function ranking_menu() {
-  $items['examples/ranking'] = array(
-    'title' => 'Field Example',
+  $items['fields/ranking'] = array(
+    'title' => 'Field Ranking',
     'page callback' => '_ranking_page',
     'access callback' => TRUE,
   );
@@ -275,7 +279,7 @@ function ranking_menu() {
  * A simple page to explain to the developer what to do.
  */
 function _ranking_page() {
-  return t("The Field Example provides a field composed of an HTML text value, like #ff00ff. To use it, add the field to a content type.");
+  return t("The Field Example provides a field composed of an HTML list value, like #ff00ff. To use it, add the field to a content type.");
 }
 /**
  * @} End of "defgroup ranking".
