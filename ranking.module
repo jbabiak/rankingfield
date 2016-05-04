@@ -177,9 +177,9 @@ function ranking_field_instance_settings_form($field, $instance) {
     }
     $form[$i]['list_option'] = array(
       '#type' => 'textfield',
-      '#title' => t('List Option ' . $i),
+      '#title' => t('List Option ' . ($i + 1)),
       '#default_value' => $settings[$i]['list_option'],
-      '#description' => t('The minimum value that should be allowed in this field. Leave blank for no minimum.'),
+      '#description' => t('The text to be displayed for this option.'),
     );
   }
   return $form;
