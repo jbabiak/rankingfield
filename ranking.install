@@ -23,7 +23,7 @@
  */
 function ranking_field_schema($field) {
   $columns = array(
-    'selection' => array('type' => 'varchar', 'length' => 7, 'not null' => FALSE),
+    'selection' => array('type' => 'varchar', 'length' => 3, 'not null' => FALSE),
   );
   $indexes = array(
     'selection' => array('selection'),
