@@ -116,9 +116,6 @@ function ranking_field_formatter_view($entity_type, $entity, $field, $instance, 
     $element[$delta] = array(
       '#type' => 'html_tag',
       '#tag' => 'p',
-      //'#attributes' => array(
-      //  'style' => 'color: blue;',
-      //),
       '#value' => t('#@rank : @option', array('@rank' => $item['selection'], '@option' => $instance['settings'][$i]['list_option'])),
     );
     $i++;
@@ -147,22 +144,24 @@ function ranking_field_widget_info() {
  * our field's widget.
  */
 function ranking_field_widget_form(&$form, &$form_state, $field, $instance, $langcode, $items, $delta, $element) {
-  $value = isset($items[$delta]['selection']) ? $items[$delta]['selection'] : '';
+  $options[0] = '- None -';
   for ($i = 1; $i <= $field['cardinality']; $i++) {
     $options[$i] = $i;
   }
-
   $widget = $element;
   $widget['#attached'] = array(
       'css' => array(
         drupal_get_path('module', 'ranking') . '/ranking.css'),
            );
-
   $widget += array(
     '#type' => 'select',
     '#options' => $options,
-    '#default_value' => ($delta+1),
-    '#suffix' => $instance['settings'][$delta]['list_option'],
+    //'#name' => 'rank-select',
+    '#default_value' => 0,
+    '#suffix' => isset($instance['settings'][$delta]['list_option']) ? $instance['settings'][$delta]['list_option'] : ' ',
+    '#attributes' => array(
+      'id' => 'rank-select',
+    )
   );
   $element['selection'] = $widget;
   return $element;
@@ -176,8 +175,8 @@ function ranking_field_instance_settings_form($field, $instance) {
       $settings[$i]['list_option'] = 'Enter text to be displayed here';
     }
     $form[$i]['list_option'] = array(
-      '#type' => 'textfield',
-      '#title' => t('List Option ' . ($i + 1)),
+      '#type' => 'textarea',
+      '#title' => t('Option ' . ($i + 1)),
       '#default_value' => $settings[$i]['list_option'],
       '#description' => t('The text to be displayed for this option.'),
     );
