@@ -8,5 +8,13 @@
 }
 
 .field-type-ranking-list .form-select {
-  width: 75px;
+  width: 100px;
+}
+
+.field-type-ranking-list td {
+  background: white !important;
+}
+
+.field-type-ranking-list .tabledrag-toggle-weight {
+  display: none;
 }

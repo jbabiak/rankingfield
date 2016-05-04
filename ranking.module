@@ -116,9 +116,6 @@ function ranking_field_formatter_view($entity_type, $entity, $field, $instance, 
     $element[$delta] = array(
       '#type' => 'html_tag',
       '#tag' => 'p',
-      //'#attributes' => array(
-      //  'style' => 'color: blue;',
-      //),
       '#value' => t('#@rank : @option', array('@rank' => $item['selection'], '@option' => $instance['settings'][$i]['list_option'])),
     );
     $i++;
@@ -147,37 +144,26 @@ function ranking_field_widget_info() {
  * our field's widget.
  */
 function ranking_field_widget_form(&$form, &$form_state, $field, $instance, $langcode, $items, $delta, $element) {
-  $value = isset($items[$delta]['selection']) ? $items[$delta]['selection'] : '';
-
-  if (!isset($instance['settings'][$delta]['list_option'])) {
-    $instance['settings'][$delta]['list_option'] = '';
-  }
-  $options[0] = 'Select';
+  $options[0] = '- None -';
   for ($i = 1; $i <= $field['cardinality']; $i++) {
-      $options[$i] = $i;
+    $options[$i] = $i;
   }
-  dpm($options);
   $widget = $element;
   $widget['#attached'] = array(
       'css' => array(
         drupal_get_path('module', 'ranking') . '/ranking.css'),
            );
-
   $widget += array(
     '#type' => 'select',
     '#options' => $options,
-    '#name' => 'rank-select',
+    //'#name' => 'rank-select',
     '#default_value' => 0,
-    '#prefix' => $instance['settings'][$delta]['list_option']
+    '#prefix' => isset($instance['settings'][$delta]['list_option']) ? $instance['settings'][$delta]['list_option'] : ' ',
+    '#attributes' => array(
+      'id' => 'rank-select',
+    )
   );
-
   $element['selection'] = $widget;
-  $form = array(
-    '#attached' => array(
-      // Add javascript
-      'js' => array(drupal_get_path('module', 'ranking') . '/ranking.js'),
-    ),
-  );
   return $element;
 }
 
@@ -190,9 +176,9 @@ function ranking_field_instance_settings_form($field, $instance) {
     }
     $form[$i]['list_option'] = array(
       '#type' => 'textarea',
-      '#title' => t('List Option ' . ($i + 1)),
+      '#title' => t('Option ' . ($i + 1)),
       '#default_value' => $settings[$i]['list_option'],
-      '#description' => t('The option and description that users will see.'),
+      '#description' => t('The text to be displayed for this option.'),
     );
   }
   return $form;

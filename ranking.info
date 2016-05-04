@@ -1,10 +1,9 @@
 name = Field Ranking
 description = An implementation of a field API to create a dynamic set of fields to have a user rate with a select ranking
 core = 7.x
-files[] = ranking.test
-
+scripts[] = ranking.js
 version = "7.x-1.x-dev"
 core = "7.x"
-project = "field"
+project = "rank"
 datestamp = "1461610145"
 
