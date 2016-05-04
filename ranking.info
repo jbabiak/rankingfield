@@ -6,4 +6,3 @@ version = "7.x-1.x-dev"
 core = "7.x"
 project = "rank"
 datestamp = "1461610145"
-
